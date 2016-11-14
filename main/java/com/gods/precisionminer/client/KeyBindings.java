@@ -8,7 +8,7 @@ public class KeyBindings {
 	public static KeyBinding precisionMiner;
 
 	public static void init() {
-		precisionMiner = new KeyBinding("Toggle", Keyboard.KEY_BACKSLASH, "PrecisionMiner");
+		precisionMiner = new KeyBinding("key_precisionminer.toggle", Keyboard.KEY_BACKSLASH, "key.categories.PrecisionMiner");
 		ClientRegistry.registerKeyBinding(precisionMiner);
 	}
 }
