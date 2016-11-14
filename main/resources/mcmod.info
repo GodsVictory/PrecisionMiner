@@ -1,0 +1,16 @@
+[
+{
+  "modid": "precisionminer",
+  "name": "PrecisionMiner",
+  "description": "PrecisionMiner",
+  "version": "0.0.1",
+  "mcversion": "1.10.2",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Gods"],
+  "credits": "Gods",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
