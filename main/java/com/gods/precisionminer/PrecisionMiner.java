@@ -31,6 +31,7 @@ public class PrecisionMiner {
 	public static boolean enabled = true;
 	public static boolean lastEnabled = false;
 	public static boolean lastAttacking = false;
+	public static boolean lastSneaking = false;
 
 	public static ArrayList<Integer> playerArray = new ArrayList<Integer>();
 	public static ArrayList<Integer> allowBreak = new ArrayList<Integer>();
@@ -56,46 +57,44 @@ public class PrecisionMiner {
 		if (FMLCommonHandler.instance().getSide().isClient()) {
 			Minecraft mc = Minecraft.getMinecraft();
 
-			if (reset && mc.theWorld != null && mc.inGameHasFocus && !mc.isGamePaused()) {
-				if (!enabled)
-					network.sendToServer(new ServerHandler(0));
-				else
-					network.sendToServer(new ServerHandler(1));
-				reset = false;
-				lastEnabled = enabled;
-			}
-
 			if (mc.theWorld != null && mc.inGameHasFocus && !mc.isGamePaused()) {
-				if (lastEnabled != enabled)
+				if (lastEnabled != enabled) {
+					lastEnabled = enabled;
 					if (!enabled)
 						network.sendToServer(new ServerHandler(0));
-					else
-						network.sendToServer(new ServerHandler(1));
-				lastEnabled = enabled;
-
-				if (enabled) {
-					boolean isAttacking = mc.gameSettings.keyBindAttack.isKeyDown();
-					if (lastAttacking != isAttacking)
-						if (!isAttacking && enabled)
-							network.sendToServer(new ServerHandler(2));
-					lastAttacking = isAttacking;
 				}
+				if (!enabled)
+					return;
+
+				boolean isAttacking = mc.gameSettings.keyBindAttack.isKeyDown();
+				if (lastAttacking != isAttacking)
+					if (!isAttacking)
+						network.sendToServer(new ServerHandler(2));
+				lastAttacking = isAttacking;
+
+				boolean isSneaking = mc.thePlayer.isSneaking();
+				if (lastSneaking != isSneaking)
+					if (isSneaking)
+						network.sendToServer(new ServerHandler(1));
+					else
+						network.sendToServer(new ServerHandler(0));
+				lastSneaking = isSneaking;
 			} else {
-				reset = true;
+				lastEnabled = !enabled;
 			}
+
 		}
+
 	}
 
 	@SubscribeEvent
 	public void onbreak(BreakEvent event) {
 		EntityPlayerMP entity = (EntityPlayerMP) event.getPlayer();
-		if (playerArray.contains(entity.getEntityId())) {
-			if (allowBreak.contains(entity.getEntityId())) {
+		if (playerArray.contains(entity.getEntityId()))
+			if (allowBreak.contains(entity.getEntityId()))
 				event.setCanceled(true);
-			} else {
+			else
 				allowBreak.add(entity.getEntityId());
-			}
-		}
 	}
 
 }
