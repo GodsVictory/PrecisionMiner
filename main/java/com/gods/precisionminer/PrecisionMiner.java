@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.gods.precisionminer.client.KeyBindings;
 import com.gods.precisionminer.client.KeyInputHandler;
-import com.gods.precisionminer.packets.ClientHandler;
 import com.gods.precisionminer.packets.ServerHandler;
 
 import net.minecraft.client.Minecraft;
@@ -24,14 +23,17 @@ import net.minecraftforge.fml.relauncher.Side;
 public class PrecisionMiner {
 	public static final String MODID = "precisionminer";
 	public static final String NAME = "precisionminer";
-	public static final String VERSION = "0.0.1";
+	public static final String VERSION = "0.0.2";
 
 	public static SimpleNetworkWrapper network;
 
-	public static boolean allowBreak = true;
+	boolean reset = true;
 	public static boolean enabled = true;
+	public static boolean lastEnabled = false;
+	public static boolean lastAttacking = false;
 
 	public static ArrayList<Integer> playerArray = new ArrayList<Integer>();
+	public static ArrayList<Integer> allowBreak = new ArrayList<Integer>();
 
 	@Mod.Instance(MODID)
 	public static PrecisionMiner instance;
@@ -43,7 +45,6 @@ public class PrecisionMiner {
 		if (FMLCommonHandler.instance().getSide().isClient()) {
 			MinecraftForge.EVENT_BUS.register(new KeyInputHandler());
 			KeyBindings.init();
-			network.registerMessage(ClientHandler.Handler.class, ClientHandler.class, 0, Side.CLIENT);
 		}
 		network.registerMessage(ServerHandler.Handler.class, ServerHandler.class, 1, Side.SERVER);
 	}
@@ -52,14 +53,35 @@ public class PrecisionMiner {
 	public void tickEvent(TickEvent.ClientTickEvent event) {
 		if (!TickEvent.Phase.START.equals(event.phase))
 			return;
-
 		if (FMLCommonHandler.instance().getSide().isClient()) {
-			if (!enabled)
-				network.sendToServer(new ServerHandler(false));
 			Minecraft mc = Minecraft.getMinecraft();
-			boolean isAttacking = mc.gameSettings.keyBindAttack.isKeyDown();
-			if (!isAttacking && mc.inGameHasFocus && !mc.isGamePaused() && enabled) {
-				network.sendToServer(new ServerHandler(true));
+
+			if (reset && mc.theWorld != null && mc.inGameHasFocus && !mc.isGamePaused()) {
+				if (!enabled)
+					network.sendToServer(new ServerHandler(0));
+				else
+					network.sendToServer(new ServerHandler(1));
+				reset = false;
+				lastEnabled = enabled;
+			}
+
+			if (mc.theWorld != null && mc.inGameHasFocus && !mc.isGamePaused()) {
+				if (lastEnabled != enabled)
+					if (!enabled)
+						network.sendToServer(new ServerHandler(0));
+					else
+						network.sendToServer(new ServerHandler(1));
+				lastEnabled = enabled;
+
+				if (enabled) {
+					boolean isAttacking = mc.gameSettings.keyBindAttack.isKeyDown();
+					if (lastAttacking != isAttacking)
+						if (!isAttacking && enabled)
+							network.sendToServer(new ServerHandler(2));
+					lastAttacking = isAttacking;
+				}
+			} else {
+				reset = true;
 			}
 		}
 	}
@@ -67,12 +89,13 @@ public class PrecisionMiner {
 	@SubscribeEvent
 	public void onbreak(BreakEvent event) {
 		EntityPlayerMP entity = (EntityPlayerMP) event.getPlayer();
-		if (playerArray.contains(entity.getEntityId()))
-			if (allowBreak) {
-				event.setCanceled(false);
-				allowBreak = false;
-			} else
+		if (playerArray.contains(entity.getEntityId())) {
+			if (allowBreak.contains(entity.getEntityId())) {
 				event.setCanceled(true);
+			} else {
+				allowBreak.add(entity.getEntityId());
+			}
+		}
 	}
 
 }

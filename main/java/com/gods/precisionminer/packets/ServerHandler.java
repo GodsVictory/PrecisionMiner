@@ -8,36 +8,38 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class ServerHandler implements IMessage {
-	private boolean allowBreak;
+	private int code;
 
 	public ServerHandler() {
 	}
 
-	public ServerHandler(boolean allowBreak) {
-		this.allowBreak = allowBreak;
+	public ServerHandler(int i) {
+		this.code = i;
 	}
 
 	@Override
 	public void fromBytes(ByteBuf buf) {
-		allowBreak = buf.readBoolean(); // this class is very useful in general
+		code = buf.readInt(); // this class is very useful in general
 										// for writing more complex objects
 	}
 
 	@Override
 	public void toBytes(ByteBuf buf) {
-		buf.writeBoolean(allowBreak);
+		buf.writeInt(code);
 	}
 
 	public static class Handler implements IMessageHandler<ServerHandler, IMessage> {
 
 		public IMessage onMessage(ServerHandler message, MessageContext ctx) {
 			int player = ctx.getServerHandler().playerEntity.getEntityId();
-			if (message.allowBreak) {
-				PrecisionMiner.allowBreak = message.allowBreak;
+			if (message.code == 0) {
+				PrecisionMiner.playerArray.remove(new Integer(player));
+				PrecisionMiner.allowBreak.remove(new Integer(player));
+			} else if (message.code == 1) {
 				if (!PrecisionMiner.playerArray.contains(player))
 					PrecisionMiner.playerArray.add(player);
-			} else {
-				PrecisionMiner.playerArray.remove(new Integer(player));
+			} else if (message.code == 2) {
+				PrecisionMiner.allowBreak.remove(new Integer(player));
 			}
 
 			return null;
