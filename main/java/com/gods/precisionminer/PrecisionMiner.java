@@ -57,7 +57,7 @@ public class PrecisionMiner {
 		if (FMLCommonHandler.instance().getSide().isClient()) {
 			Minecraft mc = Minecraft.getMinecraft();
 
-			if (mc.theWorld != null && mc.inGameHasFocus && !mc.isGamePaused()) {
+			if (mc.theWorld != null && mc.inGameHasFocus && !mc.playerController.isInCreativeMode()) {
 				if (lastEnabled != enabled) {
 					lastEnabled = enabled;
 					if (!enabled)
@@ -79,8 +79,6 @@ public class PrecisionMiner {
 					else
 						network.sendToServer(new ServerHandler(0));
 				lastSneaking = isSneaking;
-			} else {
-				lastEnabled = !enabled;
 			}
 
 		}
@@ -90,11 +88,12 @@ public class PrecisionMiner {
 	@SubscribeEvent
 	public void onbreak(BreakEvent event) {
 		EntityPlayerMP entity = (EntityPlayerMP) event.getPlayer();
-		if (playerArray.contains(entity.getEntityId()))
-			if (allowBreak.contains(entity.getEntityId()))
-				event.setCanceled(true);
-			else
-				allowBreak.add(entity.getEntityId());
+		if (entity != null)
+			if (playerArray.contains(entity.getEntityId()))
+				if (allowBreak.contains(entity.getEntityId()))
+					event.setCanceled(true);
+				else
+					allowBreak.add(entity.getEntityId());
 	}
 
 }
